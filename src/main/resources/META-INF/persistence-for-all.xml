@@ -7,6 +7,7 @@
     <class>entity.Role</class>
     <class>entity.User</class>
     <class>entity.Wish</class>
+    <class>entity.history.History</class>
     <properties>
       <!-- DONT ADD ANYTHING HERE
       This part will come from one of the pu_xxxx.properties files -->

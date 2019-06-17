@@ -2,6 +2,8 @@ package rest;
 
 import com.google.gson.Gson;
 import entity.User;
+import entity.history.History;
+import facade.HistoryDB;
 //import entity.Wish;
 import fetch.ParallelPinger;
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import utils.PuSelector;
 @Path("info")
 public class DemoResource {
 
+    HistoryDB hdb = new HistoryDB();
     Gson gson = new Gson();
     @Context
     private UriInfo context;
@@ -35,9 +38,26 @@ public class DemoResource {
     SecurityContext securityContext;
 
     @GET
+    @Path("/availablecars/{week}/{address}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getCarsAtAddressAndWeek(@PathParam("week") String week, @PathParam("address") String address) throws Exception {
+        System.out.println("week:" + week + "  address:" + address);
+        hdb.addSearchHistory(new History("week=" + week + ",addr=" + address));
+        String json = ParallelPinger.getJsonFromAllServers("week=" + week + "&addr=" + address);
+        return json;
+    }
+
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String getInfoForAll() {
         return "{\"msg\":\"Hello anonymous\"}";
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("history")
+    public String getAllHistories() {
+        return gson.toJson(hdb.getAllHistories());
     }
 
     //Just to verify if the database is setup
@@ -54,7 +74,6 @@ public class DemoResource {
         }
     }
 
-    
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("user")
@@ -63,59 +82,7 @@ public class DemoResource {
         String thisUser = securityContext.getUserPrincipal().getName();
         return "{\"name\":\"" + thisUser + "\"}";
     }
-     
- /*
-    @POST
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("user/wishpost/{wish}")
-    @RolesAllowed("user")
-    public void postUserWish(@PathParam("wish") String wish) {
-        EntityManager em1 = PuSelector.getEntityManagerFactory("pu").createEntityManager();
-        EntityManager em = PuSelector.getEntityManagerFactory("pu").createEntityManager();
-        String thisUser = securityContext.getUserPrincipal().getName();
-        User user = new User(thisUser, "");
-        Wish objectWish = new Wish(wish, user);
-        List isInDatabase = em1.createQuery("select wish from Wish wish where wish.wishID = :wishID ").setParameter("wishID", wish).getResultList();
 
-        if (isInDatabase.size() > 0) {
-            System.out.println("ALLEREDE I DATABASE ERRORROROROROROO");
-        } else {
-            try {
-                em.getTransaction().begin();
-                em.persist(objectWish);
-
-            } finally {
-                em.getTransaction().commit();
-                em.close();
-            }
-        }
-    }
-     */
- /*
-    @DELETE
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("user/wishdelete/{wish}")
-    @RolesAllowed("user")
-    public String deleteUserWish(@PathParam("wish") String wish) {
-        EntityManager em = PuSelector.getEntityManagerFactory("pu").createEntityManager();
-        String thisUser = securityContext.getUserPrincipal().getName();
-        User user = new User(thisUser, "");
-
-        try {
-//            em.createQuery("DELETE FROM Wish wish WHERE wish.user.userName = :userName AND wish.wishID = :wishID ")
-//                    .setParameter("wishID", wish).setParameter("userName", thisUser);
-            Wish w = (Wish) em.createQuery("select wish from Wish wish where wish.user.userName = :userName and wish.wishID = :wishID")
-                    .setParameter("wishID", wish).setParameter("userName", thisUser).getSingleResult();
-            System.out.println("TEEESSSSTT: " + w);
-            em.getTransaction().begin();
-            em.remove(w);
-            return wish;
-        } finally {
-            em.getTransaction().commit();
-            em.close();
-        }
-    }
-     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("admin")
